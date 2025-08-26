@@ -1,0 +1,13 @@
+[Unit]
+Description=Perform Pirate first-boot commands
+ConditionPathExists=!/boot/firstboot_done
+After=local-fs.target
+DefaultDependencies=yes
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/pirate/first-boot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

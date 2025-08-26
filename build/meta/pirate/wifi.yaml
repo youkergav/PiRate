@@ -1,0 +1,19 @@
+---
+name: pirate-wifi
+mmdebstrap:
+  packages:
+    - firmware-brcm80211
+    - rfkill
+    - dbus
+    - wpasupplicant
+    - iw
+    - bind9-dnsutils
+    - wireless-regdb
+    - dnsmasq-base
+    - avahi-daemon
+    - network-manager
+  install-recommends: false
+  customize-hooks:
+    - install -d "$1/etc/systemd/system/multi-user.target.wants"
+    - systemctl --root="$1" enable NetworkManager avahi-daemon
+    - ln -sf /etc/systemd/system/pirate-wifi.service "$1/etc/systemd/system/multi-user.target.wants/pirate-wifi.service"

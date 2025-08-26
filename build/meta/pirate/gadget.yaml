@@ -1,0 +1,8 @@
+---
+name: pirate-gadget
+mmdebstrap:
+  customize-hooks:
+    - chroot "$1" bash -lc 'getent group plugdev >/dev/null || groupadd -r plugdev'
+    - chroot "$1" bash -lc 'usermod -aG plugdev $IGconf_device_user1'
+    - chroot "$1" systemctl disable serial-getty@ttyGS0.service
+    - chroot "$1" bash -lc 'ln -sf /etc/systemd/system/pirate-gadget.service /etc/systemd/system/multi-user.target.wants/pirate-gadget.service'

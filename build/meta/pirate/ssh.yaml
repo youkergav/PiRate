@@ -1,0 +1,10 @@
+---
+name: pirate-ssh
+mmdebstrap:
+  packages:
+    - openssh-server
+    - openssh-client
+  install-recommends: false
+  customize-hooks:
+    - rm -f "$1/etc/update-motd.d/10-uname"
+    - truncate -s0 "$1/etc/motd"

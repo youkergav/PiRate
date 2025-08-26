@@ -1,0 +1,55 @@
+# For more options and information see
+# http://rptl.io/configtxt
+# Some settings may impact device functionality. See link above for details
+
+
+# Enable gadget mode
+dtoverlay=dwc2,dr_mode=peripheral
+
+# Disable VC4/KMS
+disable_fw_kms_setup=1
+
+# Disable video
+disable_overscan=1
+hdmi_blanking=2
+
+# Disable camera
+camera_auto_detect=0
+display_auto_detect=0
+auto_initramfs=1
+
+# Disable audio
+dtparam=audio=off
+
+# Lower VRAM
+gpu_mem=16
+
+# Disable turbo mode
+arm_boost=0
+
+
+[pi0]
+enable_uart=1
+arm_freq=700
+
+
+[pi02]
+enable_uart=1
+arm_64bit=1
+arm_freq=800
+
+
+[pi4]
+enable_uart=1
+
+
+[pi5]
+BOOT_UART=1
+
+
+[cm5]
+dtoverlay=dwc2,dr_mode=host
+
+
+[all]
+uart_2ndstage=1

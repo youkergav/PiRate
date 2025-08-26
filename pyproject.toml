@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pirate"
+version = "0.1.0"
+description = "USB HID keystroke injection + serial relay toolkit."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [ { name = "Gavin Youker" } ]
+
+dependencies = [
+  "colorama>=0.4.6",
+  "pyserial>=3.5",
+  "psutil>=6.1.1"
+]
+
+[project.scripts]
+pirate = "pirate:main"
+
+[tool.setuptools]
+package-dir = {"" = "app"}
+py-modules = ["pirate"]  
+
+[tool.setuptools.packages.find]
+where = ["app"]
+include = ["*"] 
+
+[tool.setuptools.package-data]
+resources = ["layouts/*.json"]

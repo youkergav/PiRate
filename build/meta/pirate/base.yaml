@@ -1,0 +1,19 @@
+---
+name: pirate-base
+mmdebstrap:
+  packages:
+    - vim
+    - tmux
+    - less
+    - htop
+    - iotop
+    - iftop
+    - psmisc
+    - curl
+    - gpg
+    - iproute2
+    - git
+    - zip
+    - tree
+    - python3-pip
+  install-recommends: false

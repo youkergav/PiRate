@@ -1,0 +1,15 @@
+debian/bookworm/arm64/base-apt
+rpi/debian/bookworm/apt
+rpi/misc-utils
+rpi/base/essential
+rpi/boot-firmware
+rpi/arm64/linux-image-v8
+rpi/user-credentials
+rpi/misc-skel
+pirate/base
+pirate/wifi
+pirate/ssh
+pirate/gadget
+pirate/first-boot
+sys-apps/systemd-net-min
+app-misc/ca-certificates

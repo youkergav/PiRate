@@ -1,0 +1,13 @@
+[Unit]
+Description=Setup Pirate HID and serial gadgets
+ConditionPathExists=/boot/firstboot_done
+Wants=sys-kernel-config.mount
+After=sys-kernel-config.mount
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/pirate/gadget.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

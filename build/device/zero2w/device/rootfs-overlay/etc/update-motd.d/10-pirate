@@ -1,0 +1,50 @@
+#!/bin/bash
+
+export TERM="xterm-256color" # Enable colors
+
+# Get system information
+USERNAME=$(journalctl -u ssh.service | grep "session opened for user" | awk -F'user ' '{print $2}' | awk -F'(' '{print $1}' | tail -n 1)
+HOSTNAME=$(hostname)
+UPTIME=$(uptime -p | sed 's/up //')
+CPU_TEMP=$(awk '{printf("%.1f°C\n", $1/1000)}' /sys/class/thermal/thermal_zone0/temp)
+MEMORY=$(free -m | awk '/Mem:/ {printf("%dMB/%dMB", $3, $2)}')
+ACTIVE_PROFILE=$(nmcli -t -f GENERAL.CONNECTION device show wlan0 | cut -d':' -f2)
+WIFI_NAME=$(nmcli -t -f 802-11-wireless.ssid connection show $ACTIVE_PROFILE | cut -d':' -f2)
+IP_ADDRESS=$(ip -4 addr show wlan0 | grep -oP 'inet \K[\d.]+')
+HOTSPOT_CONNECTIONS=$(iw dev wlan0 station dump | grep -c "Station")
+
+# Check if keyboard device is present and writable
+if [[ -w /dev/hidg0 ]]; then
+    KEYBOARD_STATUS="$(tput setaf 2)ready$(tput sgr0)"
+else
+    KEYBOARD_STATUS="$(tput setaf 1)not ready$(tput sgr0)"
+fi
+
+# Check if serial device is present and writable
+if [[ -w /dev/ttyGS0 ]]; then
+    SERIAL_STATUS="$(tput setaf 2)ready$(tput sgr0)"
+else
+    SERIAL_STATUS="$(tput setaf 1)not ready$(tput sgr0)"
+fi
+
+if [[ "$ACTIVE_PROFILE" == "hotspot" ]]; then
+    WIFI_LINE="SSID: $WIFI_NAME, Connected: $HOTSPOT_CONNECTIONS"
+else
+    WIFI_LINE="SSID: $WIFI_NAME, IP: $IP_ADDRESS"
+fi
+
+# Generate MOTD
+cat << EOF
+
+       ~                  ~       Welcome aboard, Cap'n!
+   ~       $(tput setaf 3)|    |    |$(tput sgr0)      ~
+          $(tput setaf 1)(_(  (_(  (_($(tput sgr0)           Identity: $USERNAME@$HOSTNAME
+         $(tput setaf 1)(___((___((___($(tput sgr0)          Uptime: $UPTIME
+     $(tput setaf 3)\  $(tput setaf 1)(____(_____(____($(tput sgr0)         CPU Temp: $CPU_TEMP, Memory: $MEMORY
+      $(tput setaf 3)\____|____|____|____$(tput sgr0)
+ $(tput setaf 4)------$(tput setaf 3)\ .o. .o. .o. .o. /$(tput setaf 4)------$(tput sgr0)  Wifi Mode: $ACTIVE_PROFILE
+ $(tput setaf 4)^^^^^^^ ^^^^^^  ^^^^^^^^^^^^^^$(tput sgr0)   $WIFI_LINE
+ $(tput setaf 4)^^^    ^^^    ^^^^^         ^^^$(tput sgr0)
+ $(tput setaf 4)^^         ^^^^         ^^$(tput sgr0)       Keyboard: $KEYBOARD_STATUS, Serial: $SERIAL_STATUS
+
+EOF

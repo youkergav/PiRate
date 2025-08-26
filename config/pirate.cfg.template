@@ -1,0 +1,16 @@
+[keyboard]
+layout = us                 ; keyboard layout
+wpm = 200                   ; typing speed of keystrokes
+path = /dev/hidg0           ; path the hid device
+log_keystrokes = true       ; logs raw keystroke to debug level
+
+[serial]
+path = /dev/ttyGS0          ; path to serial device
+baud = 115200               ; data transfer speed
+newline = crlf              ; newline control characters, options: crlf | lf
+
+[dev]
+log_level = info            ; stdout log level, options: debug | info | warning | error
+stack_trace_errors = false  ; errors return as stack traces
+disable_keyboard = false    ; disable keystroke injection for development
+disable_serial = false      ; disable serial connection for development

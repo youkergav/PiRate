@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply Pirate WiFi config from /config/wifi.cfg
+ConditionPathExists=/boot/firstboot_done
+Wants=network.target
+After=NetworkManager.service network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/pirate/wifi.sh /config/wifi.cfg
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

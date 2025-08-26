@@ -1,0 +1,12 @@
+[device]
+interface = <IFACE>         ; the wifi interface
+country = <COUNTRY>         ; country wifi is registered to
+profile = <PROFILE>         ; active wifi profile options: hotspot | management
+
+[hotspot]
+ssid = <HS_SSID>            ; name for the hotspot wifi
+psk = <HS_PSK>              ; password for the hotspot wifi
+
+[management]
+ssid =                      ; name for the management wifi
+psk =                       ; password for the management wifi

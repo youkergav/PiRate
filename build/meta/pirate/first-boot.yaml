@@ -1,0 +1,10 @@
+---
+name: pirate-first-boot
+mmdebstrap:
+  packages:
+    - dosfstools
+    - e2fsprogs
+    - fdisk
+  install-recommends: false
+  customize-hooks:
+    - ln -sf /etc/systemd/system/pirate-firstboot.service "$1/etc/systemd/system/multi-user.target.wants/pirate-firstboot.service"

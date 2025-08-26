@@ -1,0 +1,2 @@
+KERNEL=="hidg*",  MODE="0660", GROUP="plugdev"
+KERNEL=="ttyGS*", MODE="0660", GROUP="plugdev"

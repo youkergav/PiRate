@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$1"
+
+install -d -m 0755 "$ROOT/usr/share/keyrings"
+curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+  | gpg --dearmor > "$ROOT/usr/share/keyrings/raspberrypi-archive-keyring.gpg"
