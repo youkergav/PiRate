@@ -27,24 +27,7 @@ class Logger:
         cls._logger.log(level, f"{symbols[level]} {message}")
 
     @classmethod
-    def str_to_level(cls, level: str) -> int:
-        """Converts string log levels to Enum."""
-
-        levels = {
-            "success": cls.SUCCESS,
-            "info": cls.INFO,
-            "warning": cls.WARNING,
-            "error": cls.ERROR,
-            "debug": cls.DEBUG
-        }
-
-        if level not in levels:
-            raise ValueError(f"The level {level} not a valid log level.")
-        
-        return levels[level]
-    
-    @classmethod
-    def set_level(cls, level: int|str):
+    def set_level(cls, level: int):
         """
         Sets a log level for the singleton.
 

@@ -33,7 +33,7 @@ class Config:
 
     # Special post-load normalizers for keys that need custom casting
     _NORMALIZERS = {
-        ("dev", "log_level"): Logger.str_to_level,
+        ("dev", "log_level"): "_str_to_level",
     }
 
     @classmethod
@@ -59,15 +59,32 @@ class Config:
     
     @classmethod
     def _apply_normalizers(cls, data: Dict) -> Dict:
-        """Apply custom per-key normalizers (e.g., log level string -> int)."""
-
         out = {s: dict(v) for s, v in data.items()}
 
         for (section, key), func in cls._NORMALIZERS.items():
+            if isinstance(func, str):
+                func = getattr(cls, func)
             if section in out and key in out[section]:
                 out[section][key] = func(out[section][key])
-
+                
         return out
+    
+    @classmethod
+    def _str_to_level(cls, level: str) -> int:
+        """Converts string log levels to Enum."""
+
+        levels = {
+            "success": Logger.SUCCESS,
+            "info": Logger.INFO,
+            "warning": Logger.WARNING,
+            "error": Logger.ERROR,
+            "debug": Logger.DEBUG
+        }
+
+        if level not in levels:
+            raise ValueError(f"The level {level} not a valid log level.")
+        
+        return levels[level]
     
     @staticmethod
     def _coerce(default_value: Any, raw: str) -> Any:
