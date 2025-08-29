@@ -32,5 +32,5 @@ def macos(baud: int = 115200, show_diagnostics: bool = False) -> None:
     time.sleep(.5)
     
     # Send the payload
-    kb.send(payload, delay=0.03)
+    kb.send(payload)
     kb.send("{KEY:ENTER}")

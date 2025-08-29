@@ -1,6 +1,6 @@
 [keyboard]
 layout = us                 ; keyboard layout
-wpm = 200                   ; typing speed of keystrokes
+wpm = 500                   ; typing speed of keystrokes
 path = /dev/hidg0           ; path the hid device
 log_keystrokes = true       ; logs raw keystroke to debug level
 

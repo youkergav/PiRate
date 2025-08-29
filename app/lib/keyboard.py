@@ -1,22 +1,10 @@
 import json
 import time
 import re
-import os
-from sys import stdout
 from importlib.resources import files
 from typing import List, Dict
 from lib.config import Config
 from lib.logger import Logger
-
-class KeymapError(Exception):
-    """Custom exception for keymap-related errors."""
-
-    pass
-
-class HIDReportError(Exception):
-    """Custom exception for HID report errors."""
-
-    pass
 
 class Keyboard:
     """
@@ -26,11 +14,13 @@ class Keyboard:
     interacting with a USB HID device to send keyboard inputs.
     """
 
-    keystroke_count = 0
-
-    def __init__(self):
-        self.device_path = Config.get("keyboard", "path", "/dev/hidg0")
-        self.keymap = self._load_keymap(Config.get("keyboard", "layout", "us"))
+    def __init__(self, layout: str = None, wpm: int = None, path: str = None, log_keystrokes: bool = None, disable_keyboard: bool = None):
+        self.device_path = path if path is not None else Config.get("keyboard", "path", "/dev/hidg0")
+        self.keymap = self._load_keymap(layout if layout is not None else Config.get("keyboard", "layout", "us"))
+        self.wpm = wpm if wpm is not None else Config.get("keyboard", "wpm", 400)
+        self.log_keystrokes = log_keystrokes if log_keystrokes is not None else Config.get("keyboard", "log_keystrokes", True)
+        self.disable_keyboard = disable_keyboard if disable_keyboard is not None else Config.get("dev", "disable_keyboard", False)
+        self.keystroke_count = 0
     
     def _load_keymap(self, layout: str) -> Dict[str, List[str]]:
         """Loads a keymap identifier into the controller."""
@@ -42,7 +32,7 @@ class Keyboard:
         """Writes an 8-byte HID report to the device."""
 
         # Dont execute if in dev mode
-        if Config.get("dev", "disable_keyboard", False):
+        if self.disable_keyboard:
             return
 
         try:
@@ -53,6 +43,20 @@ class Keyboard:
             raise FileNotFoundError(f"Device path '{self.device_path}' not found.")
         except PermissionError:
             raise PermissionError(f"Permission denied for device path '{self.device_path}'.")
+    
+    def _wpm_to_delay(self, wpm: int) -> float:
+        """Converts typing speed in words-per-minute to an inter-keystroke delay."""
+
+        # Clamp WPM between 10-1000
+        if wpm < 10:
+            wpm = 10
+        elif wpm > 1000:
+            wpm = 1000
+
+        chars_per_word = 5
+        delay = 60 / (wpm * chars_per_word)
+
+        return delay
 
     def _process_keystroke(self, keystroke: str) -> None:
         """Converts a keystroke into an HID report and sends it to the device."""
@@ -79,24 +83,26 @@ class Keyboard:
             else:
                 raise HIDReportError("Too many keys in report. HID report full.")
                 
-        # Format report as hexadecimal for output
-        formatted_report = " ".join(f"{byte:02X}" for byte in report)
-        Logger.debug(f"{self.keystroke_count:05}  {formatted_report}  {' + '.join(keys)}")
+        # Log the keystrokes as hexdump
+        if self.log_keystrokes:
+            formatted_report = " ".join(f"{byte:02X}" for byte in report)
+            Logger.debug(f"{self.keystroke_count:05}  {formatted_report}  {' + '.join(keys)}")
 
         self._write_report(report)
 
-    def send(self, text: str, delay: float=0.025) -> None:
+    def send(self, text: str, wpm: int = None) -> None:
         """
         Parses text and sends keystrokes to the device.
 
-        This method interprets escape sequences like {KEY:WIN+R}' 
-        as key combinations and processes plain text character-by-character.
+        This interprets escape sequences like {KEY:WIN+R} as single hotkeys
+        and processes plain text character-by-character.
 
         Args:
-            text (str): The text to send, including any escape sequences.
-            delay (float): Delay (in seconds) between key presses. Default is 0.025.
+            text (str): Text to send, including any escape sequences.
+            wpm (Optional[int]): Per-call words-per-minute override. Defaults to self.wpm.
         """
 
+        delay = self._wpm_to_delay(self.wpm if wpm is None else wpm)
         pattern = re.compile(r"\{KEY:(.*?)\}")
         keystrokes = []
         pos = 0
@@ -120,3 +126,13 @@ class Keyboard:
         for key in keystrokes:
             self._process_keystroke(key)
             time.sleep(delay)
+
+class KeymapError(Exception):
+    """Custom exception for keymap-related errors."""
+
+    pass
+
+class HIDReportError(Exception):
+    """Custom exception for HID report errors."""
+
+    pass
