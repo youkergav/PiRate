@@ -1,9 +1,21 @@
 import os, sys, select, signal, termios, tty
 import serial
+from typing import Callable
 from lib.config import Config
+from lib.logger import Logger
 
 class Relay:
-    def stdio(self, device: str = "/dev/ttyGS0", baud: int = 115200) -> None:
+    def __init__(self, path: str = None, baud: int = None, newline: str = None, on_ready: Callable = None, disable_serial: bool = None):
+        self.device_path = path if path is not None else Config.get("serial", "path", "/dev/ttyGS0")
+        self.baud = baud if baud is not None else Config.get("serial", "baud", 115200)
+        self.newline = newline if newline is not None else Config.get("serial", "newline", "crlf")
+        self.disable_serial = disable_serial if disable_serial is not None else Config.get("dev", "disable_serial", True)
+
+        self.on_ready = on_ready
+
+        self.done_marker = b"__PIRATE_DONE__"
+
+    def stdio(self, baud: int = None) -> None:
         """
         Raw pass-through between local stdin/stdout and the serial device.
 
@@ -18,12 +30,22 @@ class Relay:
         """
 
         # Don't open connection if in dev_mode
-        if Config.get("dev", "disable_keyboard", False):
+        if self.disable_serial:
+            Logger.debug("Serial disabled in config. Skipping connection...")
             return
 
-        ser = serial.Serial(device, baudrate=baud, timeout=0, write_timeout=0,
-                            rtscts=False, dsrdtr=False, xonxoff=False)
+        baud = self.baud if baud is None else baud
+        ser = serial.Serial(
+            self.device_path,
+            baudrate=baud,
+            timeout=0,
+            write_timeout=0,
+            rtscts=False,
+            dsrdtr=False,
+            xonxoff=False
+        )
 
+        ready_fired = False
         fd_in, fd_out = sys.stdin.fileno(), sys.stdout.fileno()
         old_tty = termios.tcgetattr(fd_in)
         # Use cbreak so SIGINT is delivered locally (we'll forward it)
@@ -37,24 +59,7 @@ class Relay:
                 pass
         signal.signal(signal.SIGINT, on_sigint)
 
-        done_marker = b"__PIRATE_DONE__"
         buf = bytearray()
-
-        def write_stdout_normalized(b: bytes):
-            # Insert \r before lone \n to avoid "stairs"
-            i = 0
-            out = bytearray()
-            while i < len(b):
-                ch = b[i:i+1]
-                if ch == b"\n":
-                    # If previous byte wasn't \r, insert one
-                    prev = b[i-1:i] if i > 0 else b""
-                    if prev != b"\r":
-                        out += b"\r"
-                out += ch
-                i += 1
-            os.write(fd_out, out)
-
         try:
             while True:
                 r, _, _ = select.select([fd_in, ser.fileno()], [], [])
@@ -63,10 +68,18 @@ class Relay:
                 if ser.fileno() in r:
                     data = ser.read(4096)
                     if data:
+                        # Fire on_ready call
+                        if not ready_fired and self.on_ready:
+                            try:
+                                self.on_ready()
+                                ready_fired = True
+                            except Exception:
+                                pass
+
                         buf.extend(data)
                         os.write(fd_out, data) # write_stdout_normalized(data)
                         # Match marker even if CR/LF boundaries split it
-                        if done_marker in buf:
+                        if self.done_marker in buf:
                             os.write(fd_out, b"\r\n")
                             break
 

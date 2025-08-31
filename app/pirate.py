@@ -3,7 +3,6 @@
 import lib.payloads
 from lib.config import Config
 from lib.logger import Logger
-from lib.relay import Relay
 
 def main():
     # Setup the environment
@@ -12,25 +11,15 @@ def main():
     Logger.set_level(Config.get("dev", "log_level", Logger.INFO))
 
     # Setup dev mode if enabled.
+    if Config.get("dev", "log_level", Logger.INFO) == Logger.DEBUG:
+        Logger.debug("Developer logging enabled.")
+
     if Config.get("dev", "stack_trace_errors", False):
-        Logger.set_level(Logger.DEBUG)
-        Logger.debug("Developer mode enabled.")
+        Logger.debug("Stack trace errors enabled.")
 
     # Run the program
-    Logger.info("Injecting serial stager on target...")
-    lib.payloads.macos(show_diagnostics=True)
-
-    Logger.success("Attaching to serial...")
-    print("")
-
-    Relay().stdio(
-        device=Config.get("serial", "path", "/dev/ttyGS0"),
-        baud=int(Config.get("serial", "baud", 115200))
-    )
-
-    print("")
-    Logger.info("Session closed.")
-    print("")
+    Logger.info("Starting pirate...")
+    lib.payloads.macos()
 
     return 0
 

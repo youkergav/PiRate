@@ -45,15 +45,15 @@ class Config:
         if env and Path(env).exists():
             return env
 
-        # Canonical on-device location
-        p = Path("/config/pirate.cfg")
-        if p.exists():
-            return str(p)
-
         # Repo location fallback
         dev = Path(__file__).resolve().parents[2] / "config" / "pirate.cfg"
         if dev.exists():
             return str(dev)
+
+        # Canonical on-device location fallback
+        p = Path("/config/pirate.cfg")
+        if p.exists():
+            return str(p)
 
         return None
     
