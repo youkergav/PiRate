@@ -7,6 +7,8 @@ from lib.logger import Logger
 def main():
     # Setup the environment
     Logger.setup(Logger.INFO)
+    Logger.info("Starting pirate...")
+    
     Config.load()
     Logger.set_level(Config.get("dev", "log_level", Logger.INFO))
 
@@ -18,7 +20,6 @@ def main():
         Logger.debug("Stack trace errors enabled.")
 
     # Run the program
-    Logger.info("Starting pirate...")
     lib.payloads.macos()
 
     return 0

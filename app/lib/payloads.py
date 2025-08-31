@@ -18,7 +18,7 @@ def macos(baud: int = 115200, show_diagnostics: bool = False) -> None:
 
     payload = (
         '{'
-        'p=$(ls /dev/cu.usb* 2>/dev/null|head -n1)||exit;'
+        'p=$(ls /dev/tty.usb* 2>/dev/null|head -n1)||exit;'
         'exec 3<>$p||exit;'
         f'stty -f /dev/fd/3 {baud} raw -echo -ixon -ixoff||:;'
         f'{session_data}'
