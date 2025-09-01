@@ -7,7 +7,7 @@ from lib.logger import Logger
 def main():
     # Setup the environment
     Logger.setup(Logger.INFO)
-    Logger.info("Starting pirate...")
+    Logger.info("Starting PiRate...")
     
     Config.load()
     Logger.set_level(Config.get("dev", "log_level", Logger.INFO))

@@ -1,6 +1,6 @@
 import time
 from lib.keyboard import Keyboard
-from lib.relay import Relay
+from lib.serial_console import SerialConsole
 from lib.logger import Logger
 
 def _on_ready() -> None:
@@ -9,7 +9,7 @@ def _on_ready() -> None:
 
 def macos(baud: int = 115200, show_diagnostics: bool = False) -> None:
     kb = Keyboard()
-    rl = Relay(on_ready=_on_ready)
+    rl = SerialConsole(on_ready=_on_ready)
 
     Logger.info("Injecting serial stager on target...")
     session_data = ""
