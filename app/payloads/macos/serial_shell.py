@@ -7,7 +7,7 @@ def _on_ready() -> None:
     Logger.success("Connected!")
     print("")
 
-def macos(baud: int = 115200, show_diagnostics: bool = False) -> None:
+def execute(baud: int = 115200, show_diagnostics: bool = False) -> None:
     kb = Keyboard()
     rl = SerialConsole(on_ready=_on_ready)
 

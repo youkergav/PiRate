@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import lib.payloads
 from lib.config import Config
 from lib.logger import Logger
+from payloads.macos import serial_shell
 
 def main():
     # Setup the environment
@@ -20,7 +20,7 @@ def main():
         Logger.debug("Stack trace errors enabled.")
 
     # Run the program
-    lib.payloads.macos()
+    serial_shell.execute()
 
     return 0
 
