@@ -17,12 +17,14 @@ include = [
   { path = "pirate/resources/layouts/*.json", format = "sdist" }
 ]
 
-
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
 colorama = ">=0.4.6"
 pyserial = ">=3.5"
 psutil = ">=6.1.1"
+
+[tool.poetry.group.dev.dependencies]
+coverage = "^7.10.6"
 
 [tool.poetry.scripts]
 pirate = "pirate.main:main"
