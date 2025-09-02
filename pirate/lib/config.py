@@ -2,7 +2,7 @@ import os
 import configparser
 from pathlib import Path
 from typing import Any, Dict
-from lib.logger import Logger
+from pirate.lib.logger import Logger
 
 class Config:
     """

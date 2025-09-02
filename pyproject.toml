@@ -1,32 +1,28 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "pirate"
 version = "0.1.0"
 description = "USB HID keystroke injection + serial relay toolkit."
 readme = "README.md"
-requires-python = ">=3.11"
-license = { file = "LICENSE" }
-authors = [ { name = "Gavin Youker" } ]
+license = "LICENSE"
+authors = ["Gavin Youker"]
 
-dependencies = [
-  "colorama>=0.4.6",
-  "pyserial>=3.5",
-  "psutil>=6.1.1"
+packages = [{ include = "pirate" }]
+
+include = [
+  { path = "pirate/resources/layouts/*.json", format = "wheel" },
+  { path = "pirate/resources/layouts/*.json", format = "sdist" }
 ]
 
-[project.scripts]
-pirate = "pirate:main"
 
-[tool.setuptools]
-package-dir = {"" = "app"}
-py-modules = ["pirate"]  
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+colorama = ">=0.4.6"
+pyserial = ">=3.5"
+psutil = ">=6.1.1"
 
-[tool.setuptools.packages.find]
-where = ["app"]
-include = ["*"] 
-
-[tool.setuptools.package-data]
-resources = ["layouts/*.json"]
+[tool.poetry.scripts]
+pirate = "pirate.main:main"

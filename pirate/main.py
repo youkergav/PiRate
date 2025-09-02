@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from lib.config import Config
-from lib.logger import Logger
-from payloads.macos import serial_shell
+from pirate.lib.config import Config
+from pirate.lib.logger import Logger
+from pirate.payloads.macos import serial_shell
 
 def main():
     # Setup the environment

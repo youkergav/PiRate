@@ -3,9 +3,8 @@ import tempfile
 import textwrap
 import unittest
 from unittest.mock import MagicMock, patch
-
-from lib.config import Config
-from lib.serial_console import SerialConsole
+from pirate.lib.config import Config
+from pirate.lib.serial_console import SerialConsole
 
 def seq(*items):
     """Yield each item once; then keep returning the last item."""
@@ -54,7 +53,7 @@ class TestRelay(unittest.TestCase):
         return ser
 
     def test_serial_disabled(self):
-        with patch("serial.Serial") as serial_ctor, patch("lib.logger.Logger.debug") as log_debug:
+        with patch("serial.Serial") as serial_ctor, patch("pirate.lib.logger.Logger.debug") as log_debug:
             rl = SerialConsole(disable_serial=True)
             rl.stdio()
 

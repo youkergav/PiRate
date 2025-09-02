@@ -3,8 +3,8 @@ import unittest
 import tempfile
 import textwrap
 from unittest.mock import patch
-from lib.logger import Logger
-from lib.config import Config
+from pirate.lib.logger import Logger
+from pirate.lib.config import Config
 
 class TestConfig(unittest.TestCase):
     def setUp(self):
@@ -58,7 +58,7 @@ class TestConfig(unittest.TestCase):
     
     def test_load_missing_config(self):
         missing = os.path.join(tempfile.gettempdir(), "definitely_not_here.cfg")
-        with patch("lib.logger.Logger.warning") as warn:
+        with patch("pirate.lib.logger.Logger.warning") as warn:
             Config.load(missing)
             warn.assert_called()
         

@@ -2,7 +2,7 @@ import io
 import logging
 import unittest
 from colorama import Fore, Style
-from lib.logger import Logger
+from pirate.lib.logger import Logger
 
 class TestLogger(unittest.TestCase):
     def setUp(self):

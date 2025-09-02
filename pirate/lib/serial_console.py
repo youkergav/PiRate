@@ -1,8 +1,8 @@
 import os, sys, select, signal, termios, tty
 import serial
 from typing import Callable
-from lib.config import Config
-from lib.logger import Logger
+from pirate.lib.config import Config
+from pirate.lib.logger import Logger
 
 class SerialConsole:
     """

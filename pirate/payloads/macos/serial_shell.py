@@ -1,7 +1,7 @@
 import time
-from lib.keyboard import Keyboard
-from lib.serial_console import SerialConsole
-from lib.logger import Logger
+from pirate.lib.keyboard import Keyboard
+from pirate.lib.serial_console import SerialConsole
+from pirate.lib.logger import Logger
 
 def _on_ready() -> None:
     Logger.success("Connected!")

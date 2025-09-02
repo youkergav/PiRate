@@ -4,24 +4,18 @@ set -eu
 # $1 is the rootfs mountpoint (chroot base)
 ROOT="$1"
 
-# Define variables
+# Host repo root (where pyproject.toml and dist/ live)
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SELF_DIR/../../../../" && pwd)"
-SRC_IN_CHROOT="/opt/pirate"
+WHEEL_SRC="$(ls -t "$REPO_ROOT"/dist/pirate-*.whl 2>/dev/null | head -n1 || true)"
 
-# Copy the source into the chroot so pip can install from it
-mkdir -p "$ROOT$SRC_IN_CHROOT"
-rsync -a --delete \
-  --exclude='.git' \
-  --exclude='__pycache__' \
-  --exclude='*.pyc' \
-  --exclude='*.egg-info' \
-  "$REPO_ROOT/" "$ROOT$SRC_IN_CHROOT/"
+# Stage inside chroot and install
+STAGE_DIR="/tmp/pirate"
+mkdir -p "$ROOT$STAGE_DIR"
+cp "$WHEEL_SRC" "$ROOT$STAGE_DIR/"
 
-# Install the app (reads pyproject.toml; installs deps)
-chroot "$ROOT" /usr/bin/env bash -eux <<CHROOT
-python3 -m pip install --no-cache-dir --break-system-packages "$SRC_IN_CHROOT"
+chroot "$ROOT" /usr/bin/env bash -eux <<'CHROOT'
+set -eu
+python3 -m pip install --no-cache-dir --break-system-packages /tmp/pirate/pirate-*.whl
+rm -rf /tmp/pirate
 CHROOT
-
-# Cleanup source files
-rm -rf "$ROOT$SRC_IN_CHROOT"

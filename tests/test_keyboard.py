@@ -3,10 +3,9 @@ import unittest
 import tempfile
 import textwrap
 from unittest.mock import patch, mock_open
-
-from lib.logger import Logger
-from lib.config import Config
-from lib.keyboard import Keyboard, HIDReportError, KeymapError
+from pirate.lib.logger import Logger
+from pirate.lib.config import Config
+from pirate.lib.keyboard import Keyboard, HIDReportError, KeymapError
 
 class TestKeyboard(unittest.TestCase):
     def setUp(self):
@@ -39,7 +38,7 @@ class TestKeyboard(unittest.TestCase):
             self.assertFalse(kb.log_keystrokes)
             self.assertFalse(kb.disable_keyboard)
 
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_send_keystroke(self, _sleep):
         keymap = {"a": ["00", "04"]} # a key
 
@@ -52,7 +51,7 @@ class TestKeyboard(unittest.TestCase):
             self.assertEqual(writes[0], bytearray([0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]))
             self.assertEqual(writes[1], bytearray([0x00] * 8))
 
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_send_keystroke_combo(self, _sleep):
         keymap = {"WIN": ["08", "00"], "r": ["00", "15"]} # WIN+r keys
 
@@ -65,7 +64,7 @@ class TestKeyboard(unittest.TestCase):
             self.assertEqual(writes[0], bytearray([0x08, 0x00, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00]))
             self.assertEqual(writes[1], bytearray([0x00] * 8))
 
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_six_keystrokes(self, _sleep):
         keymap = {
             "K1": ["00", "01"], "K2": ["00", "02"], "K3": ["00", "03"],
@@ -75,7 +74,7 @@ class TestKeyboard(unittest.TestCase):
             kb = Keyboard(disable_keyboard=True)
             kb.send("{KEY:K1+K2+K3+K4+K5+K6}")
 
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_mixed_plaintext_and_hotkey(self, _sleep):
         keymap = {
             "a": ["00","04"], "b": ["00","05"], "c": ["00","06"],
@@ -91,7 +90,7 @@ class TestKeyboard(unittest.TestCase):
             self.assertEqual(writes[0], bytearray([0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]))
             self.assertEqual(writes[4], bytearray([0x08, 0x00, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00]))
     
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_wpm_override_and_clamp(self, sleep_mock):
         keymap = {"a": ["00", "04"]}
 
@@ -100,7 +99,7 @@ class TestKeyboard(unittest.TestCase):
             kb.send("a", wpm=1) # Clamp to 10 wpm
             sleep_mock.assert_called_with(1.2) # 10wpm = 1.2s
 
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_disable_keyboard(self, _sleep):
         keymap = {"a": ["00", "04"]} # a key
 
@@ -110,7 +109,7 @@ class TestKeyboard(unittest.TestCase):
 
             mopen.assert_not_called()
 
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_log_keystrokes(self, _sleep):
         keymap = {"a": ["00", "04"]}
 
@@ -131,7 +130,7 @@ class TestKeyboard(unittest.TestCase):
             with self.assertRaises(KeymapError):
                 kb.send("b")
     
-    @patch("lib.keyboard.time.sleep", return_value=None)
+    @patch("pirate.lib.keyboard.time.sleep", return_value=None)
     def test_too_many_keystrokes_raises(self, _sleep):
         keymap = {
             "K1": ["00", "01"], "K2": ["00", "02"], "K3": ["00", "03"],

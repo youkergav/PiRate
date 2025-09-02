@@ -3,8 +3,8 @@ import time
 import re
 from importlib.resources import files
 from typing import List, Dict
-from lib.config import Config
-from lib.logger import Logger
+from pirate.lib.config import Config
+from pirate.lib.logger import Logger
 
 class Keyboard:
     """
@@ -25,7 +25,7 @@ class Keyboard:
     def _load_keymap(self, layout: str) -> Dict[str, List[str]]:
         """Loads a keymap identifier into the controller."""
 
-        data = files("resources").joinpath(f"layouts/{layout}.json").read_text(encoding="utf-8")
+        data = files("pirate.resources").joinpath(f"layouts/{layout}.json").read_text(encoding="utf-8")
         return json.loads(data)
 
     def _write_report(self, report: List[int]) -> None:

@@ -16,5 +16,4 @@ mmdebstrap:
     - zip
     - tree
     - python3-pip
-    - python3-venv
   install-recommends: false
