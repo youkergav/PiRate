@@ -14,7 +14,7 @@ from colorama import Fore, Style
 class Logger:
     """A singleton class for handling formatted and colored logging."""
 
-    _logger = None
+    _logger: logging.Logger | None = None
 
     SUCCESS = 25
     INFO = logging.INFO
@@ -25,6 +25,9 @@ class Logger:
     @classmethod
     def _log(cls, level: int, message: str) -> None:
         """Write a log message based on log level."""
+
+        if cls._logger is None:
+            raise RuntimeError("Logger not initialized. Call Logger.setup() first.")
 
         symbols = {
             cls.SUCCESS: f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.RESET_ALL}",
@@ -37,7 +40,7 @@ class Logger:
         cls._logger.log(level, f"{symbols[level]} {message}")
 
     @classmethod
-    def set_level(cls, level: int):
+    def set_level(cls, level: int) -> None:
         """
         Set a log level for the singleton.
 
@@ -45,10 +48,13 @@ class Logger:
             level (int): The log level to set.
         """
 
+        if cls._logger is None:
+            raise RuntimeError("Logger not initialized. Call Logger.setup() first.")
+
         cls._logger.setLevel(level)
 
     @classmethod
-    def setup(cls, log_level: int):
+    def setup(cls, log_level: int) -> None:
         """
         Set up the Logger singleton.
 

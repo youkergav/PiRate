@@ -15,7 +15,7 @@ import tty
 from collections.abc import Callable
 from contextlib import suppress
 
-import serial
+from serial import Serial
 
 from pirate.lib.config import Config
 from pirate.lib.logger import Logger
@@ -37,11 +37,11 @@ class SerialConsole:
 
     def __init__(
         self,
-        path: str = None,
-        baud: int = None,
-        newline: str = None,
-        on_ready: Callable = None,
-        disable_serial: bool = None,
+        path: str | None = None,
+        baud: int | None = None,
+        newline: str | None = None,
+        on_ready: Callable[[], None] | None = None,
+        disable_serial: bool | None = None,
     ):
         """
         Initialize a serial console relay.
@@ -63,12 +63,12 @@ class SerialConsole:
 
     def stdio(
         self,
-        baud: int = None,
-        ser: object = None,
-        in_fd: int = None,
-        out_fd: int = None,
-        manage_tty: bool = True,
-        install_sigint_handler: bool = True,
+        baud: int | None = None,
+        ser: Serial | None = None,
+        in_fd: int | None = None,
+        out_fd: int | None = None,
+        manage_tty: bool | None = True,
+        install_sigint_handler: bool | None = True,
     ) -> None:
         """
         Relay stdin/stdout to the serial device until detach/EOF/marker.
@@ -94,7 +94,7 @@ class SerialConsole:
 
         baud = self.baud if baud is None else baud
         created_ser = ser is None
-        ser = ser or serial.Serial(
+        ser = ser or Serial(
             self.device_path,
             baudrate=baud,
             timeout=0,
@@ -115,7 +115,7 @@ class SerialConsole:
             tty.setcbreak(fd_in)
         if install_sigint_handler:
 
-            def on_sigint(_sig, _frm):
+            def on_sigint(_sig: int, _frm: object) -> None:
                 with suppress(Exception):
                     ser.write(b"\x03")
 

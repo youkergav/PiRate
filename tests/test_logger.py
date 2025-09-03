@@ -33,9 +33,7 @@ class TestLogger(unittest.TestCase):
         self.assertIsNotNone(handlers[0].formatter)
         self.assertEqual(handlers[0].formatter._fmt, "%(message)s")
 
-        self.assertEqual(
-            logging.getLevelName(Logger.SUCCESS), "SUCCESS"
-        )  # Custom log level
+        self.assertEqual(logging.getLevelName(Logger.SUCCESS), "SUCCESS")  # Custom log level
 
     def test_set_level(self):
         current_level = Logger._logger.level
@@ -51,9 +49,7 @@ class TestLogger(unittest.TestCase):
         Logger.success(message)
         out = self._read_stream()
 
-        self.assertEqual(
-            out, f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.RESET_ALL} {message}\n"
-        )
+        self.assertEqual(out, f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.RESET_ALL} {message}\n")
 
     def test_log_info(self):
         message = "Informational log"
@@ -61,9 +57,7 @@ class TestLogger(unittest.TestCase):
         Logger.info(message)
         out = self._read_stream()
 
-        self.assertEqual(
-            out, f"{Fore.BLUE}{Style.BRIGHT}[*]{Style.RESET_ALL} {message}\n"
-        )
+        self.assertEqual(out, f"{Fore.BLUE}{Style.BRIGHT}[*]{Style.RESET_ALL} {message}\n")
 
     def test_log_warning(self):
         message = "Be careful!"
@@ -71,9 +65,7 @@ class TestLogger(unittest.TestCase):
         Logger.warning(message)
         out = self._read_stream()
 
-        self.assertEqual(
-            out, f"{Fore.YELLOW}{Style.BRIGHT}[!]{Style.RESET_ALL} {message}\n"
-        )
+        self.assertEqual(out, f"{Fore.YELLOW}{Style.BRIGHT}[!]{Style.RESET_ALL} {message}\n")
 
     def test_log_error(self):
         message = "An error has occured!"
@@ -81,9 +73,7 @@ class TestLogger(unittest.TestCase):
         Logger.error(message)
         out = self._read_stream()
 
-        self.assertEqual(
-            out, f"{Fore.RED}{Style.BRIGHT}[-]{Style.RESET_ALL} {message}\n"
-        )
+        self.assertEqual(out, f"{Fore.RED}{Style.BRIGHT}[-]{Style.RESET_ALL} {message}\n")
 
     def test_log_dev(self):
         message = "Verbose information here"
@@ -91,9 +81,7 @@ class TestLogger(unittest.TestCase):
         Logger.debug(message)
         out = self._read_stream()
 
-        self.assertEqual(
-            out, f"{Fore.LIGHTBLACK_EX}{Style.BRIGHT}[>]{Style.RESET_ALL} {message}\n"
-        )
+        self.assertEqual(out, f"{Fore.LIGHTBLACK_EX}{Style.BRIGHT}[>]{Style.RESET_ALL} {message}\n")
 
     def test_filtered_log(self):
         Logger.set_level("INFO")

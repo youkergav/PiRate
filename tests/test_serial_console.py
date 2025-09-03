@@ -58,7 +58,7 @@ class TestRelay(unittest.TestCase):
 
     def test_serial_disabled(self):
         with (
-            patch("serial.Serial") as serial_ctor,
+            patch("pirate.lib.serial_console.Serial") as serial_ctor,
             patch("pirate.lib.logger.Logger.debug") as log_debug,
         ):
             rl = SerialConsole(disable_serial=True)
@@ -80,7 +80,7 @@ class TestRelay(unittest.TestCase):
         on_ready = MagicMock()
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch(
                 "select.select",
                 side_effect=seq(([self.ser_fd], [], []), ([self.ser_fd], [], [])),
@@ -107,7 +107,7 @@ class TestRelay(unittest.TestCase):
         ser.read.side_effect = [b"__PIRATE_", b"DONE__"]
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch(
                 "select.select",
                 side_effect=seq(([self.ser_fd], [], []), ([self.ser_fd], [], [])),
@@ -129,7 +129,7 @@ class TestRelay(unittest.TestCase):
         ser = self._mk_serial_mock()
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch("select.select", side_effect=seq(([self.fd_in], [], []))),
             patch("os.read", return_value=b"\x1d"),
             patch("os.write"),
@@ -149,7 +149,7 @@ class TestRelay(unittest.TestCase):
         ser = self._mk_serial_mock()
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch("select.select", side_effect=seq(([self.fd_in], [], []))),
             patch("os.read", return_value=b""),
             patch("os.write"),
@@ -168,7 +168,7 @@ class TestRelay(unittest.TestCase):
         ser = self._mk_serial_mock()
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch(
                 "select.select",
                 side_effect=seq(([self.fd_in], [], []), ([self.fd_in], [], [])),
@@ -191,7 +191,7 @@ class TestRelay(unittest.TestCase):
         ser = self._mk_serial_mock()
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch(
                 "select.select",
                 side_effect=seq(([self.fd_in], [], []), ([self.fd_in], [], [])),
@@ -218,7 +218,7 @@ class TestRelay(unittest.TestCase):
             captured["handler"] = handler
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch("signal.signal", side_effect=capture_signal),
             patch("signal.getsignal", return_value=None),
             patch("select.select", side_effect=seq(([self.fd_in], [], []))),
@@ -243,7 +243,7 @@ class TestRelay(unittest.TestCase):
         ser = self._mk_serial_mock()
 
         with (
-            patch("serial.Serial", return_value=ser),
+            patch("pirate.lib.serial_console.Serial", return_value=ser),
             patch("termios.tcgetattr", return_value=["old"]),
             patch("termios.tcsetattr") as tcset,
             patch("tty.setcbreak"),

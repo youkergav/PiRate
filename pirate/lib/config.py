@@ -9,7 +9,7 @@ retrieving and overriding values at runtime.
 import configparser
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from pirate.lib.logger import Logger
 
@@ -21,8 +21,8 @@ class Config:
     Allows overriding defaults via CLI arguments.
     """
 
-    _data: dict = None
-    _defaults: dict = {
+    _data: ClassVar[dict[str, dict[str, Any]] | None] = None
+    _defaults: ClassVar[dict[str, dict[str, Any]]] = {
         "keyboard": {
             "layout": "us",
             "wpm": 200,
@@ -44,7 +44,7 @@ class Config:
     }
 
     @classmethod
-    def _resolve_config_path(cls) -> str:
+    def _resolve_config_path(cls) -> str | None:
         """Return a usable pirate.cfg path (env > /config > repo fallback) or None."""
 
         # ENV override
@@ -65,7 +65,7 @@ class Config:
         return None
 
     @classmethod
-    def _apply_normalizers(cls, data: dict) -> dict:
+    def _apply_normalizers(cls, data: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
         """Apply custom normalizers."""
 
         out = {s: dict(v) for s, v in data.items()}
@@ -111,7 +111,7 @@ class Config:
         return raw
 
     @classmethod
-    def load(cls, filepath=False) -> None:
+    def load(cls, filepath: str | None = None) -> None:
         """
         Load the configuration from a file and merges CLI arguments.
 

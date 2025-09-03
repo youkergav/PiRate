@@ -5,7 +5,7 @@ from pirate.lib.logger import Logger
 from pirate.payloads.macos import serial_shell
 
 
-def main():
+def main() -> int:
     # Setup the environment
     Logger.setup(Logger.INFO)
     Logger.info("Starting PiRate...")

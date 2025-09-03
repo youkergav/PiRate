@@ -9,9 +9,12 @@ import json
 import re
 import time
 from importlib.resources import files
+from typing import cast
 
 from pirate.lib.config import Config
 from pirate.lib.logger import Logger
+
+Keymap = dict[str, list[str]]
 
 
 class Keyboard:
@@ -24,11 +27,11 @@ class Keyboard:
 
     def __init__(
         self,
-        layout: str = None,
-        wpm: int = None,
-        path: str = None,
-        log_keystrokes: bool = None,
-        disable_keyboard: bool = None,
+        layout: str | None = None,
+        wpm: int | None = None,
+        path: str | None = None,
+        log_keystrokes: bool | None = None,
+        disable_keyboard: bool | None = None,
     ):
         """
         Initialize a Keyboard HID emulator.
@@ -49,11 +52,11 @@ class Keyboard:
         self.disable_keyboard = disable_keyboard if disable_keyboard is not None else Config.get("dev", "disable_keyboard", False)
         self.keystroke_count = 0
 
-    def _load_keymap(self, layout: str) -> dict[str, list[str]]:
+    def _load_keymap(self, layout: str) -> Keymap:
         """Load a keymap identifier into the controller."""
 
         data = files("pirate.resources").joinpath(f"layouts/{layout}.json").read_text(encoding="utf-8")
-        return json.loads(data)
+        return cast(Keymap, json.loads(data))
 
     def _write_report(self, report: list[int]) -> None:
         """Write an 8-byte HID report to the device."""
@@ -117,7 +120,7 @@ class Keyboard:
 
         self._write_report(report)
 
-    def send(self, text: str, wpm: int = None) -> None:
+    def send(self, text: str, wpm: int | None = None) -> None:
         """
         Parse text and sends keystrokes to the device.
 

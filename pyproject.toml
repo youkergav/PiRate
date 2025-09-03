@@ -26,6 +26,10 @@ psutil = ">=6.1.1"
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.10.6"
 ruff = "^0.12.11"
+mypy = "^1.17.1"
+typing-extensions = "^4.15.0"
+types-colorama = "^0.4.15.20250801"
+types-pyserial = "^3.5.0.20250822"
 
 [tool.poetry.scripts]
 pirate = "pirate.main:main"
@@ -50,10 +54,40 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "W", "UP", "N", "D", "S", "A", "C4", "SIM"]
-ignore = ["D202", "D203", "D209", "D210", "D212", "D213", "D413"] 
+ignore = ["D202", "D203", "D209", "D210", "D212", "D213", "D413"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D100", "D101", "D102", "D103", "D104", "D401", "S101", "PLR2004"]
 "**/__init__.py" = ["D104"]
 "pirate/main.py" = ["D100", "D103"]
 "pirate/payloads/**" = ["D100", "D103", "D401"]
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["pirate"]
+explicit_package_bases = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_optional = true
+strict_equality = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "pirate.lib.*"
+ignore_missing_imports = true
+disallow_untyped_calls = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = "pirate.payloads.*"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
