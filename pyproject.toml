@@ -14,7 +14,7 @@ packages = [{ include = "pirate" }]
 
 include = [
   { path = "pirate/resources/layouts/*.json", format = "wheel" },
-  { path = "pirate/resources/layouts/*.json", format = "sdist" }
+  { path = "pirate/resources/layouts/*.json", format = "sdist" },
 ]
 
 [tool.poetry.dependencies]
@@ -25,6 +25,35 @@ psutil = ">=6.1.1"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.10.6"
+ruff = "^0.12.11"
 
 [tool.poetry.scripts]
 pirate = "pirate.main:main"
+
+[tool.coverage.run]
+source = ["pirate"]
+command_line = "-m unittest discover -s tests"
+
+[tool.coverage.report]
+fail_under = 80
+omit = [
+  "tests/*",
+  "pirate/main.py",
+  "pirate/payloads/*",
+  "pirate/resources/*",
+  "pirate/**/__init__.py",
+]
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "W", "UP", "N", "D", "S", "A", "C4", "SIM"]
+ignore = ["D202", "D203", "D209", "D210", "D212", "D213", "D413"] 
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D101", "D102", "D103", "D104", "D401", "S101", "PLR2004"]
+"**/__init__.py" = ["D104"]
+"pirate/main.py" = ["D100", "D103"]
+"pirate/payloads/**" = ["D100", "D103", "D401"]

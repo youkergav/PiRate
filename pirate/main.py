@@ -4,11 +4,12 @@ from pirate.lib.config import Config
 from pirate.lib.logger import Logger
 from pirate.payloads.macos import serial_shell
 
+
 def main():
     # Setup the environment
     Logger.setup(Logger.INFO)
     Logger.info("Starting PiRate...")
-    
+
     Config.load()
     Logger.set_level(Config.get("dev", "log_level", Logger.INFO))
 
@@ -23,6 +24,7 @@ def main():
     serial_shell.execute()
 
     return 0
+
 
 if __name__ == "__main__":
     try:

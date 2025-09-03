@@ -1,6 +1,16 @@
+"""
+Colored logging utilities for PiRate.
+
+This module defines the `Logger` singleton class, which wraps the standard
+`logging` module with custom log levels, ANSI color codes, and convenience
+methods for success, info, warning, error, and debug output.
+"""
+
 import logging
+
 from colorama import Fore, Style
-        
+
+
 class Logger:
     """A singleton class for handling formatted and colored logging."""
 
@@ -11,7 +21,7 @@ class Logger:
     WARNING = logging.WARN
     ERROR = logging.ERROR
     DEBUG = logging.DEBUG
-    
+
     @classmethod
     def _log(cls, level: int, message: str) -> None:
         """Write a log message based on log level."""
@@ -29,7 +39,7 @@ class Logger:
     @classmethod
     def set_level(cls, level: int):
         """
-        Sets a log level for the singleton.
+        Set a log level for the singleton.
 
         Args:
             level (int): The log level to set.
@@ -40,14 +50,14 @@ class Logger:
     @classmethod
     def setup(cls, log_level: int):
         """
-        Sets up the Logger singleton.
+        Set up the Logger singleton.
 
         Args:
-            level_level (int): The log level to set.
+            log_level (int): The initial log level to configure for the logger.
         """
-        
+
         cls._logger = logging.getLogger("pirate_logger")
-        cls._logger.setLevel((log_level))
+        cls._logger.setLevel(log_level)
 
         # Add stream handler
         handler = logging.StreamHandler()
@@ -61,40 +71,40 @@ class Logger:
     @classmethod
     def success(cls, message: str) -> None:
         """
-        Logs a success message.
+        Log a success message.
 
         Args:
             message (str): The success message to log.
         """
 
         cls._log(cls.SUCCESS, message)
-    
+
     @classmethod
     def info(cls, message: str) -> None:
         """
-        Logs a info message.
+        Log a info message.
 
         Args:
             message (str): The info message to log.
         """
 
         cls._log(cls.INFO, message)
-    
+
     @classmethod
     def warning(cls, message: str) -> None:
         """
-        Logs a warning message.
+        Log a warning message.
 
         Args:
             message (str): The warning message to log.
         """
 
         cls._log(cls.WARNING, message)
-    
+
     @classmethod
     def error(cls, message: str) -> None:
         """
-        Logs an error message.
+        Log an error message.
 
         Args:
             message (str): The error message to log.
@@ -105,7 +115,7 @@ class Logger:
     @classmethod
     def debug(cls, message: str) -> None:
         """
-        Logs a debug message.
+        Log a debug message.
 
         Args:
             message (str): The debug message to log.
