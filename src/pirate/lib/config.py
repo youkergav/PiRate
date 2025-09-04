@@ -53,7 +53,7 @@ class Config:
             return env
 
         # Repo location fallback
-        dev = Path(__file__).resolve().parents[2] / "config" / "pirate.cfg"
+        dev = Path(__file__).resolve().parents[3] / "config" / "pirate.cfg"
         if dev.exists():
             return str(dev)
 

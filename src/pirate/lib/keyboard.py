@@ -55,7 +55,7 @@ class Keyboard:
     def _load_keymap(self, layout: str) -> Keymap:
         """Load a keymap identifier into the controller."""
 
-        data = files("pirate.resources").joinpath(f"layouts/{layout}.json").read_text(encoding="utf-8")
+        data = files("pirate").joinpath(f"resources/layouts/{layout}.json").read_text(encoding="utf-8")
         return cast(Keymap, json.loads(data))
 
     def _write_report(self, report: list[int]) -> None:
