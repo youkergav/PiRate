@@ -1,0 +1,37 @@
+name: Vulnerability Check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      PYTHON_VERSION: "3.11"
+      POETRY_VIRTUALENVS_IN_PROJECT: "true"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: "1.8.3"
+
+      - name: Install dependencies (with dev)
+        run: poetry install --with dev
+
+      - name: Check for vulnerable libraries
+        run: poetry check
