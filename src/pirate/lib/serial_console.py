@@ -8,15 +8,17 @@ escape sequences (e.g., detach, EOF), and log/diagnostic integration.
 
 import os
 import select
-from contextlib import suppress
 import signal
 import sys
 import termios
-from pirate.lib.logger import Logger
 import tty
 from collections.abc import Callable
+from contextlib import suppress
+
 from serial import Serial
+
 from pirate.lib.config import Config
+from pirate.lib.logger import Logger
 
 
 class SerialConsole:
