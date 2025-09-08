@@ -1,4 +1,4 @@
-name: Linting and formatting
+name: Document Codebase
 
 on:
   pull_request:
@@ -34,17 +34,8 @@ jobs:
       - name: Install dependencies (with dev)
         run: poetry install --with dev
 
-      - name: Run type checks
-        run:
-          poetry run mypy -p pirate
-
-      - name: Run linting
-        run:
-            poetry run ruff check --fix
-
-      - name: Run formatting
-        run:
-            poetry run ruff format
+      - name: Generate docs
+        run: poetry run pdoc --docformat google -o docs pirate '!pirate.cli' '!pirate.payloads'
 
       - name: Commit changes
         run: |
