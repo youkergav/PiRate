@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/youkergav/PiRate/compare/v0.2.3...v0.2.4) (2025-09-08)
+
+
+### Bug Fixes
+
+* Logger and Serial properly log if disabled in config ([c832558](https://github.com/youkergav/PiRate/commit/c832558edc0b4a498eb1b627091ed6f42a20b99a))
+
 ## [0.2.3](https://github.com/youkergav/PiRate/compare/v0.2.2...v0.2.3) (2025-09-08)
 
 
