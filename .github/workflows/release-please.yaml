@@ -17,3 +17,4 @@ jobs:
           release-type: python
           path: .
           target-branch: main
+          prerelease: false
