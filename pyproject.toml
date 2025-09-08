@@ -45,7 +45,6 @@ command_line = "-m unittest discover -s tests"
 fail_under = 80
 omit = [
   "tests/*",
-  "src/pirate/cli.py",
   "src/pirate/payloads/*",
   "src/pirate/resources/*",
   "src/pirate/**/__init__.py",

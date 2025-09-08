@@ -2,10 +2,15 @@
 import argparse
 import importlib
 import sys
+from collections.abc import Callable
+from types import ModuleType
+from typing import cast
 
 from pirate import __version__
 from pirate.lib.config import Config
 from pirate.lib.logger import Logger
+
+Handler = Callable[[argparse.Namespace], int]
 
 
 class PayloadNotFoundError(Exception):
@@ -14,7 +19,7 @@ class PayloadNotFoundError(Exception):
     pass
 
 
-def _resolve_payload(short_path: str):
+def _resolve_payload(short_path: str) -> ModuleType:
     """
     Import 'pirate.payloads.<short_path>' and return the module object.
 
@@ -122,7 +127,9 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = _build_parser()
     ns = parser.parse_args(argv)
-    return ns.handler(ns)
+    handler = cast(Handler, ns.handler)
+
+    return handler(ns)
 
 
 if __name__ == "__main__":
