@@ -52,6 +52,9 @@ class Keyboard:
         self.disable_keyboard = disable_keyboard if disable_keyboard is not None else Config.get("dev", "disable_keyboard", False)
         self.keystroke_count = 0
 
+        if self.disable_keyboard:
+            Logger.debug("Keyboard disabled in config. Skipping keystrokes...")
+
     def _load_keymap(self, layout: str) -> Keymap:
         """Load a keymap identifier into the controller."""
 

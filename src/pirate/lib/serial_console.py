@@ -61,6 +61,9 @@ class SerialConsole:
 
         self.on_ready = on_ready
 
+        if self.disable_serial:
+            Logger.debug("Serial disabled in config. Skipping connection...")
+
     def stdio(
         self,
         baud: int | None = None,
@@ -89,7 +92,6 @@ class SerialConsole:
         """
         # Don't open connection if in dev_mode
         if self.disable_serial:
-            Logger.debug("Serial disabled in config. Skipping connection...")
             return
 
         baud = self.baud if baud is None else baud
