@@ -1,0 +1,46 @@
+services:
+  pirate-image-gen:
+    build: .
+    image: pirate-image-gen:latest
+    privileged: true
+    stdin_open: true
+    user: "4000:4000"
+    working_dir: /opt/rpi-image-gen
+    tty: true
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+      DEBCONF_NONINTERACTIVE_SEEN: "true"
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      POETRY_VIRTUALENVS_CREATE: "false"
+      POETRY_VIRTUALENVS_IN_PROJECT: "false"
+      POETRY_VIRTUALENVS_PATH: "/opt/venvs"
+    volumes:
+      - ../../:/home/imagegen/pirate:ro
+      - ../../dist:/home/imagegen/pirate/dist
+    command: >-
+      bash -lc '
+        set -euo pipefail
+        export PATH="$$PATH:/sbin:/usr/sbin"
+
+        version="$(poetry -C /home/imagegen/pirate version -s 2>/dev/null)"
+        echo "INFO: building pirate-$$version"
+
+        rm -rf /home/imagegen/pirate/dist/*
+        mkdir -p /home/imagegen/pirate/dist/
+
+        poetry -C /home/imagegen/pirate build -f wheel -n
+        ./build.sh -o /home/imagegen/pirate/build/pirate.options -D /home/imagegen/pirate/build/ -c pirate
+
+        latest_deploy="$$(ls -dt /opt/rpi-image-gen/work/*/deploy 2>/dev/null | head -n1)"
+        img_path="$$(ls "$$latest_deploy"/*.img 2>/dev/null | head -n1)"
+        img_dest="/home/imagegen/pirate/dist/pirate-$$version.img"
+
+        echo "INFO: moving image '\''$$img_path'\'' -> '\''$$img_dest'\''"
+        mv "$$img_path" "$$img_dest"
+
+        echo "INFO: generating checksums"
+        (cd /home/imagegen/pirate/dist && sha256sum pirate-*.img pirate-*.whl > SHA256SUMS.txt)
+
+        echo "build completed!"
+      '
