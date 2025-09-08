@@ -39,7 +39,7 @@ USB HID keystroke injection + serial relay toolkit. **Built for Raspberry Pi Zer
 2. SSH into PiRate.
     - The **default hostname** is `aurora.local`
     - The **default credentials** are: Username: `capn` Password: `scallywag`
-3. To execute your first payload, simply run `pirate`.
+3. To execute your first payload, simply run `pirate execute macos.serial_shell`.
 
 ## Configuration
 PiRate stores its configurable settings on a FAT32 **CONFIG** partition so you can edit them

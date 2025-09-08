@@ -24,7 +24,7 @@ class TestLogger(unittest.TestCase):
         return self.stream.getvalue()
 
     def test_setup(self):
-        self.assertEqual(Logger._logger.name, "pirate_logger")
+        self.assertEqual(Logger._logger.name, "pirate")
         self.assertEqual(Logger._logger.level, logging.DEBUG)
 
         handlers = Logger._logger.handlers

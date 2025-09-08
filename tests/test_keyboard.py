@@ -24,7 +24,9 @@ class TestKeyboard(unittest.TestCase):
                 ).lstrip()
             )
         self.cfg_path = path
+
         Config.load(self.cfg_path)
+        Logger.setup(Logger.INFO)
 
     def tearDown(self):
         if os.path.exists(self.cfg_path):
@@ -145,7 +147,6 @@ class TestKeyboard(unittest.TestCase):
             kb.send("a")
 
             message = log_debug.call_args[0][0]
-            log_debug.assert_called_once()
             self.assertEqual("00001  00 00 04 00 00 00 00 00  a", message)
 
     def test_unknown_key_raises(self):

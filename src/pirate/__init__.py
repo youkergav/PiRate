@@ -37,3 +37,7 @@ PiRate provides the building blocks for:
 For information on coding standards, testing practices, and how to submit
 changes, please see the project's **Contributing Guide**.
 """
+
+from importlib.metadata import version
+
+__version__ = version("pirate")

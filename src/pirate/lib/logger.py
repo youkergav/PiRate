@@ -62,7 +62,7 @@ class Logger:
             log_level (int): The initial log level to configure for the logger.
         """
 
-        cls._logger = logging.getLogger("pirate_logger")
+        cls._logger = logging.getLogger("pirate")
         cls._logger.setLevel(log_level)
 
         # Add stream handler
