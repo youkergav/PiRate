@@ -1,0 +1,3 @@
+hostname = <HOSTNAME>  ; device hostname... perhaps a ship name?
+username = <USERNAME>  ; primary login user
+password = <PASSWORD>  ; password for the user above

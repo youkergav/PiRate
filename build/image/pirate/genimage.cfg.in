@@ -34,7 +34,7 @@ image boot.vfat {
 image config.vfat {
    vfat {
       label = "CONFIG"
-      files = { "config/wifi.cfg", "config/pirate.cfg" }
+      files = { "config/wifi.cfg", "config/pirate.cfg", "config/first-boot.cfg" }
    }
    size = 256M
 }

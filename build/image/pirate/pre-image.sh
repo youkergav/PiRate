@@ -1,6 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+align_cfg_comments() {
+  local file="$1"
+  local tmp="$(mktemp "${file}.XXXXXX")"
+
+  # Align comments in wifi.cfg
+  awk -F';' '
+  {
+      sub(/[[:space:]]+$/, "", $1)
+      len = length($1)
+      if (len > max) max = len
+      lines[NR] = $0
+      keys[NR]  = $1
+      comments[NR] = $2
+  }
+  END {
+      for (i = 1; i <= NR; i++) {
+          if (comments[i] == "") {
+              print lines[i]
+          } else {
+              pad = max - length(keys[i]) + 2
+              printf "%s%*s;%s\n", keys[i], pad, "", comments[i]
+          }
+      }
+  }' "$file" > "$tmp" && mv "$tmp" "$file"
+}
+
 rootfs="$1"
 genimg_in="$2"
 
@@ -38,6 +64,14 @@ if [[ -d "$CONFIG_DST_IMG" ]]; then
 fi
 : "${CONFIG_FILES:=}"
 
+# Generate final first-boot.cfg
+sed -i \
+  -e "s|<HOSTNAME>|$IGconf_device_hostname|g" \
+  -e "s|<USERNAME>|$IGconf_device_user1|g" \
+  -e "s|<PASSWORD>|$IGconf_device_user1pass|g" \
+  "$CONFIG_DST_IMG/first-boot.cfg"
+align_cfg_comments "$CONFIG_DST_IMG/first-boot.cfg" 
+
 # Generate final wifi.cfg
 sed -i \
   -e "s|<IFACE>|$IGconf_wifi_iface|g" \
@@ -46,29 +80,7 @@ sed -i \
   -e "s|<HS_SSID>|$IGconf_wifi_hotspot_ssid|g" \
   -e "s|<HS_PSK>|$IGconf_wifi_hotspot_psk|g" \
   "$CONFIG_DST_IMG/wifi.cfg"
-
-# Align comments in wifi.cfg
-awk -F';' '
-{
-    # trim trailing spaces in field 1
-    sub(/[[:space:]]+$/, "", $1)
-    len = length($1)
-    if (len > max) max = len
-    lines[NR] = $0
-    keys[NR]  = $1
-    comments[NR] = $2
-}
-END {
-    for (i = 1; i <= NR; i++) {
-        if (comments[i] == "") {
-            print lines[i]
-        } else {
-            pad = max - length(keys[i]) + 2  # two spaces before comment
-            printf "%s%*s;%s\n", keys[i], pad, "", comments[i]
-        }
-    }
-}' "$CONFIG_DST_IMG/wifi.cfg" > "$CONFIG_DST_IMG/wifi.cfg.tmp" && mv "$CONFIG_DST_IMG/wifi.cfg.tmp" "$CONFIG_DST_IMG/wifi.cfg"
-
+align_cfg_comments "$CONFIG_DST_IMG/wifi.cfg" 
 
 # Generate final genimage.cfg
 sed -e "s|<IMAGE_DIR>|$IGconf_sys_outputdir|g" \
