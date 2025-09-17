@@ -39,8 +39,11 @@ services:
         echo "INFO: moving image '\''$$img_path'\'' -> '\''$$img_dest'\''"
         mv "$$img_path" "$$img_dest"
 
+        echo "INFO: moving install scripts -> '\''/home/imagegen/pirate/dist'\''"
+        cp /home/imagegen/pirate/tools/install.sh /home/imagegen/pirate/dist/install.sh
+
         echo "INFO: generating checksums"
-        (cd /home/imagegen/pirate/dist && sha256sum pirate-*.img pirate-*.whl > SHA256SUMS.txt)
+        (cd /home/imagegen/pirate/dist && sha256sum pirate-*.img pirate-*.whl install.sh > SHA256SUMS.txt)
 
         echo "build completed!"
       '
