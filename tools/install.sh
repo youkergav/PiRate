@@ -481,26 +481,36 @@ sleep 0.5
 
 # ========== MOUNT CONFIG PARTITION ==========
 printf "Mounting CONFIG partition... "
-CONFIG_MNT=""
+CONFIG_MNT="/Volumes/CONFIG"
+
 if [[ "$(uname)" == "Darwin" ]]; then
-  # macOS: prefer raw device naming but mount by diskutil
-  # Assume the first partition is CONFIG (FAT). If yours differs, adjust the slice.
-  diskutil mount "${DEVICE_PATH}s1" >/dev/null 2>&1 || true
-  CONFIG_MNT="/Volumes/CONFIG"
-  # Give Finder a moment
-  for _ in {1..50}; do
-    [[ -d "$CONFIG_MNT" && -f "$CONFIG_MNT/wifi.cfg" ]] && break
-    sleep 0.1
+  # Force the kernel to re-read partition table
+  diskutil unmountDisk force "$DEVICE_PATH" >/dev/null 2>&1 || true
+  sleep 1
+  diskutil mountDisk "$DEVICE_PATH" >/dev/null 2>&1 || true
+
+  # Retry loop: wait until CONFIG actually mounted and has files
+  for i in {1..50}; do
+    if [[ -d "$CONFIG_MNT" && -f "$CONFIG_MNT/wifi.cfg" ]]; then
+      printf "$(tput setaf 2)done$(tput sgr0)\n"
+      break
+    fi
+    sleep 0.2
   done
+
+  if [[ ! -d "$CONFIG_MNT" || ! -f "$CONFIG_MNT/wifi.cfg" ]]; then
+    echo "error: could not mount CONFIG partition."
+    exit 1
+  fi
 else
-  # Linux: first partition is usually the small FAT CONFIG partition
   CONFIG_DEV="${DEVICE_PATH}1"
   mkdir -p /mnt/config
   mount "$CONFIG_DEV" /mnt/config
   CONFIG_MNT="/mnt/config"
+  printf "$(tput setaf 2)done$(tput sgr0)\n"
 fi
 
-if [[ ! -d "$CONFIG_MNT" ]]; then
+if [[ -z "$CONFIG_MNT" || ! -d "$CONFIG_MNT" ]]; then
   echo "error: could not mount CONFIG partition."
   exit 1
 else
@@ -547,12 +557,57 @@ printf "$(tput setaf 2)done$(tput sgr0)\n"
 
 # ========== EJECT / UNMOUNT ==========
 printf "Ejecting CONFIG partition... "
+
+sync
+
 if [[ "$(uname)" == "Darwin" ]]; then
-  diskutil eject "$DEVICE_PATH" >/dev/null 2>&1 || true
+  DISK_FOR_DU="${DEVICE_PATH/rdisk/disk}"
+
+  # 1) Try to stop Spotlight indexing to reduce remount races
+  if [[ -n "$CONFIG_MNT" && -d "$CONFIG_MNT" ]]; then
+    mdutil -i off "$CONFIG_MNT" >/dev/null 2>&1 || true
+  fi
+
+  # 2) Unmount the volume path first (retry a few times)
+  for _ in {1..10}; do
+    [[ -n "$CONFIG_MNT" ]] && diskutil unmount "$CONFIG_MNT" >/dev/null 2>&1 || true
+    # Break if it’s truly gone
+    mount | grep -q -- "$CONFIG_MNT" || break
+    sleep 0.3
+  done
+
+  # 3) Unmount the whole disk (retry)
+  for _ in {1..10}; do
+    diskutil unmountDisk "$DISK_FOR_DU" >/dev/null 2>&1 || true
+    # If no slices are mounted, we’re good
+    diskutil list "$DISK_FOR_DU" | awk '/Apple_APFS|Microsoft Basic Data|DOS_FAT/ {print $NF}' \
+      | while read -r p; do diskutil info "$p" | grep -q 'Mounted:.*Yes' && echo mounted; done \
+      | grep -q mounted || break
+    sleep 0.3
+  done
+
+  # 4) Eject the disk (retry)
+  for _ in {1..10}; do
+    diskutil eject "$DISK_FOR_DU" >/dev/null 2>&1 && break
+    sleep 0.3
+  done
+
+  # Final check
+  if diskutil info "$DISK_FOR_DU" >/dev/null 2>&1; then
+    echo "warning: could not fully eject $DISK_FOR_DU; please eject manually in Finder."
+  else
+    printf "$(tput setaf 2)done$(tput sgr0)\n"
+  fi
 else
-  umount "$CONFIG_MNT" || true
+  umount "$CONFIG_MNT" >/dev/null 2>&1 || true
+  # Best-effort: ensure it’s gone
+  for _ in {1..10}; do
+    mount | grep -q -- "$CONFIG_MNT" || break
+    umount -l "$CONFIG_MNT" >/dev/null 2>&1 || true
+    sleep 0.3
+  done
+  printf "$(tput setaf 2)done$(tput sgr0)\n"
 fi
-printf "$(tput setaf 2)done$(tput sgr0)\n"
 
 
 printf "\nPiRate image successfully installed! You may now safely remove the SD card.\n"
