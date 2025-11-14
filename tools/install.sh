@@ -136,6 +136,51 @@ cfg_set_ini() {
 }
 
 
+# ========== PLATFORM DETECTION ==========
+PLATFORM="$(uname -s)"
+case "$PLATFORM" in
+  Darwin*)
+    IS_MACOS=1
+    IS_LINUX=0
+    ;;
+  Linux*)
+    IS_MACOS=0
+    IS_LINUX=1
+    ;;
+  *)
+    echo "error: unsupported platform '$PLATFORM'. This script supports macOS and Linux only."
+    exit 1
+    ;;
+esac
+
+# Platform-specific helper: get file size
+get_file_size() {
+  local file="$1"
+  if [[ $IS_MACOS -eq 1 ]]; then
+    stat -f%z "$file" 2>/dev/null | tr -d '\n'
+  else
+    stat -c%s "$file" 2>/dev/null | tr -d '\n'
+  fi
+}
+
+# Platform-specific helper: detect config partition device
+detect_config_partition() {
+  local device="$1"
+  if [[ $IS_MACOS -eq 1 ]]; then
+    # macOS: disk3s1 format
+    echo "${device}s1"
+  else
+    # Linux: CONFIG is partition 2 on PiRate images
+    # Handle both /dev/sdX and /dev/mmcblkX formats
+    if [[ "$device" =~ mmcblk ]]; then
+      echo "${device}p2"
+    else
+      echo "${device}2"
+    fi
+  fi
+}
+
+
 # ========== PARSE/VALIDATE ARGS ==========
 # Validate running as root
 if [[ $EUID -ne 0 ]]; then
@@ -437,7 +482,7 @@ if [[ -z "$IMAGE_PATH" ]]; then
     
     while kill -0 $curl_pid 2>/dev/null; do
         if [[ -f "$IMAGE_PATH" ]]; then
-            downloaded_size=$(stat -f%z $IMAGE_PATH | tr -d '\n')
+            downloaded_size=$(get_file_size "$IMAGE_PATH")
             progress=$(( (downloaded_size * 100) / file_size ))
 
             progress_bar "Downloading $IMAGE_NAME..." "$progress"
@@ -457,33 +502,68 @@ fi
 
 
 # ========== FLASH IMAGE ==========
+# Unmount any mounted partitions on the device
 if mount | grep -q "$DEVICE_PATH"; then
-    sudo diskutil unmountDisk force $DEVICE_PATH > /dev/null 2>&1
+    if [[ $IS_MACOS -eq 1 ]]; then
+        diskutil unmountDisk force "$DEVICE_PATH" > /dev/null 2>&1
+    else
+        # Linux: unmount all partitions
+        for part in "${DEVICE_PATH}"*; do
+            [[ -b "$part" ]] && umount "$part" 2>/dev/null || true
+        done
+    fi
 fi
 
-total_size=$(ls -l $IMAGE_PATH | awk '{print $5}' | tr -d '\r\n')
+total_size=$(get_file_size "$IMAGE_PATH")
 sudo dd if="$IMAGE_PATH" of="$DEVICE_PATH" bs=1M status=progress 2> /tmp/pirate_dd.log &
 dd_pid=$!
 
 transfered_size=0
 while kill -0 "$dd_pid" 2>/dev/null; do
-    transfered_size=$(tr '\r' '\n' < /tmp/pirate_dd.log | awk '/bytes.*transferred/ {print $1}' | tail -n 1)
-    progress=$(( (transfered_size * 100) / total_size ))
+    # Parse dd output - works on both macOS and Linux
+    if [[ $IS_MACOS -eq 1 ]]; then
+        # macOS dd outputs: "X bytes transferred in Y secs"
+        transfered_size=$(tr '\r' '\n' < /tmp/pirate_dd.log | awk '/bytes.*transferred/ {print $1}' | tail -n 1)
+    else
+        # Linux dd with status=progress outputs: "X bytes (YMB, ZMB/s) copied"
+        transfered_size=$(tr '\r' '\n' < /tmp/pirate_dd.log | awk '{print $1}' | tail -n 1)
+    fi
+
+    # Avoid division by zero
+    if [[ -n "$transfered_size" && "$transfered_size" -gt 0 && "$total_size" -gt 0 ]]; then
+        progress=$(( (transfered_size * 100) / total_size ))
+    else
+        progress=0
+    fi
 
     progress_bar "Flashing $IMAGE_NAME..." "$progress"
     sleep 1
 done
 
+# Wait for dd to complete and check exit status
+wait "$dd_pid"
+dd_exit=$?
+
+# Sync to ensure all data is flushed to disk
+sync
+
 rm /tmp/pirate_dd.log
+
+if [[ $dd_exit -ne 0 ]]; then
+    echo "error: dd failed with exit code $dd_exit"
+    exit 1
+fi
+
 printf "\r\033[K%sFlashing $IMAGE_NAME... $(tput setaf 2)done$(tput sgr0)\n" > /dev/tty
 sleep 0.5
 
 
 # ========== MOUNT CONFIG PARTITION ==========
 printf "Mounting CONFIG partition... "
-CONFIG_MNT="/Volumes/CONFIG"
 
-if [[ "$(uname)" == "Darwin" ]]; then
+if [[ $IS_MACOS -eq 1 ]]; then
+  CONFIG_MNT="/Volumes/CONFIG"
+
   # Force the kernel to re-read partition table
   diskutil unmountDisk force "$DEVICE_PATH" >/dev/null 2>&1 || true
   sleep 1
@@ -492,7 +572,6 @@ if [[ "$(uname)" == "Darwin" ]]; then
   # Retry loop: wait until CONFIG actually mounted and has files
   for i in {1..50}; do
     if [[ -d "$CONFIG_MNT" && -f "$CONFIG_MNT/wifi.cfg" ]]; then
-      printf "$(tput setaf 2)done$(tput sgr0)\n"
       break
     fi
     sleep 0.2
@@ -502,18 +581,55 @@ if [[ "$(uname)" == "Darwin" ]]; then
     echo "error: could not mount CONFIG partition."
     exit 1
   fi
-else
-  CONFIG_DEV="${DEVICE_PATH}1"
-  mkdir -p /mnt/config
-  mount "$CONFIG_DEV" /mnt/config
-  CONFIG_MNT="/mnt/config"
-  printf "$(tput setaf 2)done$(tput sgr0)\n"
-fi
 
-if [[ -z "$CONFIG_MNT" || ! -d "$CONFIG_MNT" ]]; then
-  echo "error: could not mount CONFIG partition."
-  exit 1
+  printf "$(tput setaf 2)done$(tput sgr0)\n"
 else
+  # Linux
+  CONFIG_DEV="$(detect_config_partition "$DEVICE_PATH")"
+
+  # Force kernel to re-read partition table
+  partprobe "$DEVICE_PATH" 2>/dev/null || blockdev --rereadpt "$DEVICE_PATH" 2>/dev/null || true
+  sleep 1
+
+  # Retry loop: wait for partition device to appear
+  partition_ready=0
+  for i in {1..20}; do
+    if [[ -b "$CONFIG_DEV" ]]; then
+      partition_ready=1
+      break
+    fi
+    sleep 0.5
+  done
+
+  if [[ $partition_ready -eq 0 ]]; then
+    echo "error: partition $CONFIG_DEV did not appear after flashing."
+    exit 1
+  fi
+
+  # Check if the partition is already auto-mounted by the desktop environment
+  existing_mount=$(findmnt -n -o TARGET "$CONFIG_DEV" 2>/dev/null | head -n1)
+
+  if [[ -n "$existing_mount" ]]; then
+    # Partition is already mounted, use that mount point
+    CONFIG_MNT="$existing_mount"
+  else
+    # Not mounted yet, mount it manually
+    CONFIG_MNT="/mnt/pirate_config"
+    mkdir -p "$CONFIG_MNT"
+
+    if ! mount -t vfat "$CONFIG_DEV" "$CONFIG_MNT" 2>/dev/null; then
+      echo "error: could not mount $CONFIG_DEV to $CONFIG_MNT."
+      exit 1
+    fi
+  fi
+
+  # Verify expected files exist
+  if [[ ! -f "$CONFIG_MNT/wifi.cfg" ]]; then
+    echo "error: CONFIG partition mounted but wifi.cfg not found at $CONFIG_MNT."
+    [[ "$CONFIG_MNT" == "/mnt/pirate_config" ]] && umount "$CONFIG_MNT" 2>/dev/null || true
+    exit 1
+  fi
+
   printf "$(tput setaf 2)done$(tput sgr0)\n"
 fi
 
@@ -560,7 +676,7 @@ printf "Ejecting CONFIG partition... "
 
 sync
 
-if [[ "$(uname)" == "Darwin" ]]; then
+if [[ $IS_MACOS -eq 1 ]]; then
   DISK_FOR_DU="${DEVICE_PATH/rdisk/disk}"
 
   # 1) Try to stop Spotlight indexing to reduce remount races
@@ -571,7 +687,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
   # 2) Unmount the volume path first (retry a few times)
   for _ in {1..10}; do
     [[ -n "$CONFIG_MNT" ]] && diskutil unmount "$CONFIG_MNT" >/dev/null 2>&1 || true
-    # Break if it’s truly gone
+    # Break if it's truly gone
     mount | grep -q -- "$CONFIG_MNT" || break
     sleep 0.3
   done
@@ -579,7 +695,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
   # 3) Unmount the whole disk (retry)
   for _ in {1..10}; do
     diskutil unmountDisk "$DISK_FOR_DU" >/dev/null 2>&1 || true
-    # If no slices are mounted, we’re good
+    # If no slices are mounted, we're good
     diskutil list "$DISK_FOR_DU" | awk '/Apple_APFS|Microsoft Basic Data|DOS_FAT/ {print $NF}' \
       | while read -r p; do diskutil info "$p" | grep -q 'Mounted:.*Yes' && echo mounted; done \
       | grep -q mounted || break
@@ -594,19 +710,31 @@ if [[ "$(uname)" == "Darwin" ]]; then
 
   # Final check
   if diskutil info "$DISK_FOR_DU" >/dev/null 2>&1; then
-    echo "warning: could not fully eject $DISK_FOR_DU; please eject manually in Finder."
+    echo "warning: could not fully eject $DISK_FOR_DU; please eject manually."
   else
     printf "$(tput setaf 2)done$(tput sgr0)\n"
   fi
 else
-  umount "$CONFIG_MNT" >/dev/null 2>&1 || true
-  # Best-effort: ensure it’s gone
+  # Linux
+  # 1) Unmount the CONFIG partition
   for _ in {1..10}; do
+    umount "$CONFIG_MNT" >/dev/null 2>&1 || true
+    # Break if it's truly unmounted
     mount | grep -q -- "$CONFIG_MNT" || break
+    # Try lazy unmount as fallback
     umount -l "$CONFIG_MNT" >/dev/null 2>&1 || true
     sleep 0.3
   done
-  printf "$(tput setaf 2)done$(tput sgr0)\n"
+
+  # 2) Clean up mount point (only if we created it)
+  [[ "$CONFIG_MNT" == "/mnt/pirate_config" && -d "$CONFIG_MNT" ]] && rmdir "$CONFIG_MNT" 2>/dev/null || true
+
+  # 3) Verify unmount was successful
+  if mount | grep -q -- "$CONFIG_MNT"; then
+    echo "warning: could not fully unmount $CONFIG_MNT; you may need to unmount manually."
+  else
+    printf "$(tput setaf 2)done$(tput sgr0)\n"
+  fi
 fi
 
 
